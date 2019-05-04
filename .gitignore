@@ -1,0 +1,8 @@
+bin/
+font.chr
+font.chr.bin.asm
+pooh.chr
+pooh_tux.chr
+shine.chr
+tux_shine.txt
+*.dat
