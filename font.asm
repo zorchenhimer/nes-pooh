@@ -731,10 +731,6 @@
     .byte %11000000
     .byte %00000000
 
-    ; Sprite zero tile
-    .charmap '&', 73
-    .byte $FF, $FF, $FF, $FF
-    .byte $FF, $FF, $FF, $FF
     ;.byte %10000000
     ;.byte %00000000
     ;.byte %00000000

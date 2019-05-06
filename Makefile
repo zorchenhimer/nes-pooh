@@ -15,8 +15,10 @@ NAME = pooh
 
 # List of all the sources files
 SOURCES = main.asm nes2header.inc \
-		  poo.chr \
-		  poo_tux.chr \
+		  pooh.chr \
+		  pooh_tux.chr \
+		  text.asm \
+		  text.chr.ids.asm \
 		  font.asm
 
 # misc
@@ -41,6 +43,9 @@ pooh_tux.chr: pooh_tux.bmp
 
 tux_shine.txt: tux_shine.bmp
 	bmp2chr -o shine.chr -debug tux_shine.bmp > tux_shine.txt
+
+text2.txt: text.bmp
+	bmp2chr -o text.chr -debug text.bmp > text2.txt
 
 bin/:
 	mkdir bin

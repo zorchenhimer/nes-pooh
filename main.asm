@@ -104,11 +104,17 @@ LookupShineSprites:
     .word NoTuxShine
     .word TuxShine
 
-Font:
-    .include "font.asm"
-FontEnd:
-    RUNE_COUNT = ((FontEnd - Font) / 8)
-    .assert RUNE_COUNT - 1 = '&', error, "Font values are not correct"
+;Font:
+;    .include "font.asm"
+;FontEnd:
+;    RUNE_COUNT = ((FontEnd - Font) / 8)
+;    .assert RUNE_COUNT - 1 = '&', error, "Font values are not correct"
+
+SpriteZeroSpriteChr:
+    ; Sprite zero tile
+    .charmap '&', 73
+    .byte $FF, $FF, $FF, $FF
+    .byte $FF, $FF, $FF, $FF
 
 NoTuxChr:
     .incbin "pooh.chr"
@@ -146,7 +152,7 @@ TuxShineChr:
     .include "tux_shine.asm"
 TuxShineCount = (* - TuxShineChr) / 8
 TuxShine:
-    .byte $4A, $4B, $4C, $4D, $4E
+    .byte $F0, $F1, $F2, $F3, $F4
 
 AttrTable:
     .byte $55, $55, $55, $55, $55, $55, $55, $55
@@ -157,6 +163,11 @@ AttrTable:
     .byte $55, $00, $00, $00, $00, $00, $00, $55
     .byte $55, $00, $00, $00, $00, $00, $00, $55
     .byte $55, $00, $00, $00, $00, $00, $00, $55
+
+TextChrData:
+    .include "text.asm"
+    TextChrLength = (* - TextChrData) / 8
+    .include "text.chr.ids.asm"
 
 .segment "PAGE0"
 RESET:
@@ -486,36 +497,63 @@ DrawBothBackgrounds:
     sta $2006
     jsr WriteAttr
 
-    lda #Screens::NoTux
-    asl a
-    tax
-
-    lda LookupText, x
-    sta TmpAddr
-    lda LookupText+1, x
-    sta TmpAddr+1
-
+    ;
+    ; First screen text
     lda #$20
     sta $2006
     lda #$42
     sta $2006
-    jsr DrawText
 
-    lda #Screens::Tux
-    asl a
-    tax
-
-    lda LookupText, x
+    lda #<TextIds_Both
     sta TmpAddr
-    lda LookupText+1, x
+    lda #>TextIds_Both
     sta TmpAddr+1
 
+    ldx #TextIds_Both_Length
+    jsr DrawSomeText
+
+    lda #<TextIds_NoTux
+    sta TmpAddr
+    lda #>TextIds_NoTux
+    sta TmpAddr+1
+
+    ldx #TextIds_NoTux_Length
+    jsr DrawSomeText
+
+    ;
+    ; Second screen text
     lda #$24
     sta $2006
     lda #$42
     sta $2006
-    jmp DrawText
-    ;rts
+
+    lda #<TextIds_Both
+    sta TmpAddr
+    lda #>TextIds_Both
+    sta TmpAddr+1
+
+    ldx #TextIds_Both_Length
+    jsr DrawSomeText
+
+    lda #<TextIds_Tux
+    sta TmpAddr
+    lda #>TextIds_Tux
+    sta TmpAddr+1
+
+    ldx #TextIds_Tux_Length
+    jsr DrawSomeText
+
+    rts
+
+DrawSomeText:
+    ldy #0
+:
+    lda (TmpAddr), y
+    sta $2007
+    iny
+    dex
+    bne :-
+    rts
 
 WriteAttr:
     ; Write attribute table
@@ -580,16 +618,16 @@ DrawBackground:
     rts
 
 LoadFont:
-    lda #<Font
+    lda #<TextChrData
     sta TmpAddr
-    lda #>Font
+    lda #>TextChrData
     sta TmpAddr+1
 
     lda #$00
     sta $2006
     sta $2006
 
-    ldx #RUNE_COUNT
+    ldx #TextChrLength
 @tileLoop:
     ldy #0
 :
@@ -614,13 +652,27 @@ LoadFont:
 :
     dex
     bne @tileLoop
+
+    ldx #0
+:
+    lda SpriteZeroSpriteChr, x
+    sta $2007
+    inx
+    cpx #8
+    bne :-
+
+    lda #0
+.repeat 8
+    sta $2007
+.endrepeat
     rts
 
 LoadShine:
     bit $2002
     lda #$0F
     sta $2006
-    lda #$01
+    lda #$00
+    sta $2006
 
     lda #<TuxShineChr
     sta TmpAddr
@@ -734,7 +786,7 @@ LoadScreen:
     tax
 
     ;lda LookupSpzTile, x
-    lda #'&'
+    lda #$29
     sta $0201
 
     lda #$00
