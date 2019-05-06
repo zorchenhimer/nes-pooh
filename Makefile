@@ -45,7 +45,7 @@ tux_shine.txt: tux_shine.bmp
 	bmp2chr -o shine.chr -debug tux_shine.bmp > tux_shine.txt
 
 text2.txt: text.bmp
-	bmp2chr -o text.chr -debug text.bmp > text2.txt
+	bmp2chr -o text2.chr -debug text.bmp > text2.txt
 
 bin/:
 	mkdir bin

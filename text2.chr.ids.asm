@@ -1,5 +1,7 @@
+; asmsyntax=ca65
+
+;.byte $00
 TextIds_Both:
-    ;.byte $00
     .byte $01
     .byte $02
     .byte $03
@@ -23,7 +25,6 @@ TextIds_NoTux:
     .byte $12
     .byte $13
     .byte $14
-    .byte $00
     TextIds_NoTux_Length = * - TextIds_NoTux
 
 TextIds_Tux:
@@ -53,9 +54,9 @@ TextIds_Tux:
     .byte $25
     .byte $26
     .byte $27
+    .byte $1C
     .byte $28
-    .byte $04
-    .byte $16
-    .byte $25
-    .byte $22
+    .byte $29
+    .byte $2A
+    .byte $2B
     TextIds_Tux_Length = * - TextIds_Tux

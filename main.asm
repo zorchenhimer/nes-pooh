@@ -110,6 +110,7 @@ LookupShineSprites:
 ;    RUNE_COUNT = ((FontEnd - Font) / 8)
 ;    .assert RUNE_COUNT - 1 = '&', error, "Font values are not correct"
 
+SpriteZeroId = $2C
 SpriteZeroSpriteChr:
     ; Sprite zero tile
     .charmap '&', 73
@@ -164,10 +165,15 @@ AttrTable:
     .byte $55, $00, $00, $00, $00, $00, $00, $55
     .byte $55, $00, $00, $00, $00, $00, $00, $55
 
+;TextChrData:
+;    .include "text.asm"
+;    TextChrLength = (* - TextChrData) / 8
+;    .include "text.chr.ids.asm"
+
 TextChrData:
-    .include "text.asm"
+    .include "text2.asm"
     TextChrLength = (* - TextChrData) / 8
-    .include "text.chr.ids.asm"
+    .include "text2.chr.ids.asm"
 
 .segment "PAGE0"
 RESET:
@@ -474,7 +480,7 @@ DrawBothBackgrounds:
     sta $2006
     lda #$80
     sta $2006
-    lda #'&'
+    lda #SpriteZeroId
     sta $2007
 
     ; Sprite zero BG tile, NT 1
@@ -482,7 +488,7 @@ DrawBothBackgrounds:
     sta $2006
     lda #$80
     sta $2006
-    lda #'&'
+    lda #SpriteZeroId
     sta $2007
 
     lda #$23
@@ -785,8 +791,7 @@ LoadScreen:
     lsr a
     tax
 
-    ;lda LookupSpzTile, x
-    lda #$29
+    lda #SpriteZeroId
     sta $0201
 
     lda #$00
