@@ -104,6 +104,10 @@ LookupShineSprites:
     .word NoTuxShine
     .word TuxShine
 
+LookupChrLengths:
+    .byte (NoTuxId - NoTuxChr) / 16
+    .byte (TuxId - TuxChr) / 16
+
 ;Font:
 ;    .include "font.asm"
 ;FontEnd:
@@ -780,6 +784,12 @@ LoadScreen:
     sta ChrAddr
     lda LookupChr+1, x
     sta ChrAddr+1
+
+    txa
+    lsr a
+    tax
+    lda LookupChrLengths, x
+    sta ChrCount
     jsr LoadChr
 
     ; Setup sprite zero
