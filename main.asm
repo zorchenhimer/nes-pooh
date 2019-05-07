@@ -45,6 +45,7 @@ NMISkip:    .res 1
 
 CurrentScreen:  .res 1
 NewScreen:      .res 1
+ScreenEnabled:  .res 1
 
 ; Button Constants
 BUTTON_A        = 1 << 7
@@ -257,6 +258,7 @@ RESET:
 
     ; Do this after all other init stuff
     lda #%00011110
+    sta ScreenEnabled
     sta $2001
 
 DoFrame:
@@ -279,6 +281,12 @@ DoFrame:
 
     jsr ReadControllers
 
+    lda #BUTTON_B
+    jsr ButtonPressed
+    beq :+
+    lda #0
+    sta ScreenEnabled
+:
     lda #BUTTON_A
     jsr ButtonPressed
     beq WaitFrame
@@ -343,7 +351,8 @@ NMI:
 
     dec sleeping
 
-    lda #%00011110
+    lda ScreenEnabled
+    ;lda #%00011110
     sta $2001
 
     lda #%10000000
