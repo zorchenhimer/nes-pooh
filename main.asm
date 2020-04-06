@@ -156,7 +156,7 @@ TuxText:
     nop
 TuxShineChr:
     .include "tux_shine.asm"
-TuxShineCount = (* - TuxShineChr) / 8
+    TuxShineCount = (* - TuxShineChr) / 8
 TuxShine:
     .byte $F0, $F1, $F2, $F3, $F4
 
@@ -179,6 +179,12 @@ TextChrData:
     .include "text2.asm"
     TextChrLength = (* - TextChrData) / 8
     .include "text2.chr.ids.asm"
+
+    .out "Tile counts:"
+    .out .sprintf("    NoTux: %d", NoTuxCount)
+    .out .sprintf("    Tux:   %d", TuxCount)
+    .out .sprintf("    Shine: %d", TuxShineCount)
+    .out .sprintf("    Text:  %d", TextChrLength)
 
 .segment "PAGE0"
 RESET:
@@ -266,6 +272,8 @@ DoFrame:
 
     lda #0
     sta NMISkip
+    lda ScreenEnabled
+    beq @noSpz
 
 ; wait for vblank to end
 :   bit $2002
@@ -279,14 +287,25 @@ DoFrame:
     ora CurrentScreen
     sta $2000
 
+@noSpz:
     jsr ReadControllers
 
+    ; Toggle screen on/off
     lda #BUTTON_B
     jsr ButtonPressed
+    beq @noB
+
+    lda ScreenEnabled
     beq :+
+
     lda #0
     sta ScreenEnabled
-:
+    jmp @noB
+
+:   lda #%00011110
+    sta ScreenEnabled
+
+@noB:
     lda #BUTTON_A
     jsr ButtonPressed
     beq WaitFrame

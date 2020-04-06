@@ -1,4 +1,5 @@
 ; asmsyntax=ca65
+
     .byte %00000000
     .byte %00000000
     .byte %00000000

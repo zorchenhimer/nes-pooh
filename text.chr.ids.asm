@@ -23,7 +23,7 @@ TextIds_NoTux:
     .byte $12
     .byte $13
     .byte $14
-    .byte $00
+    ;.byte $00
     TextIds_NoTux_Length = * - TextIds_NoTux
 
 TextIds_Tux:
