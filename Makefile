@@ -23,11 +23,7 @@ CHR = pooh.chr \
 
 # List of all the sources files
 SOURCES = main.asm nes2header.inc \
-		  pooh.chr \
-		  pooh_tux.chr \
-		  text.asm \
-		  text.chr.ids.asm \
-		  font.asm
+		  pooh.i pooh_tux.i
 
 .PHONY: clean default chr cleanall
 
