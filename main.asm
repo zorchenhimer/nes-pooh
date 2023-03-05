@@ -4,7 +4,7 @@
 
 nes2mapper 1
 nes2prg 2 * 16 * 1024
-nes2chr 3 *  4 * 1024
+nes2chr 4 *  4 * 1024
 nes2mirror 'V'
 nes2tv 'N'
 nes2end
@@ -39,6 +39,8 @@ TextBGTile = $0E
 
 .segment "CHR2"
     .incbin "pooh_tux.chr"
+
+.segment "CHR3"
 
 .segment "ZEROPAGE"
 Sleeping: .res 1
