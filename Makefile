@@ -66,7 +66,7 @@ shine.chr: shine.bmp
 	$(CHRUTIL) -o $@ $< --remove-duplicates
 
 %.chr %.i: %.bmp
-	$(CHRUTIL) -o $(basename $@).chr $^ --remove-duplicates --write-ids $(basename $@).i
+	$(CHRUTIL) -o $(basename $@).chr $^ --remove-duplicates --nt-ids $(basename $@).i
 
 #shine.i: shine.chr
 #shine.chr: tux_shine.bmp

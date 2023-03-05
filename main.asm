@@ -23,6 +23,8 @@ BUTTON_DOWN     = 1 << 2
 BUTTON_LEFT     = 1 << 1
 BUTTON_RIGHT    = 1 << 0
 
+TextBGTile = $0E
+
 .segment "VECTORS"
     .word NMI
     .word RESET
@@ -49,7 +51,14 @@ IgnoreInput: .res 1
 Controller: .res 1
 Controller_Old: .res 1
 
+TmpY: .res 1
+
+Counter: .res 2
+AddressPointer: .res 2
+
 .segment "OAM"
+SpriteZero:   .res 4
+ShineSprites: .res (4*5)
 
 .segment "BSS"
 
@@ -91,21 +100,48 @@ RESET:
 :   bit $2002
     bpl :-
 
+    jsr MMC1_Init
+
     lda #$FF
     sta Draw
 
     lda #00
     sta Scroll
 
-    lda #%10010000
-    sta $2000
+    ; Setup sprite zero
+    lda #250
+    sta SpriteZero+3
+    lda #22
+    sta SpriteZero+0
 
-    jsr MMC1_Init
+    lda #$0F
+    sta SpriteZero+1
+    lda #0
+    sta SpriteZero+2
+
+    lda #$3F
+    sta $2006
+    lda #$00
+    sta $2006
+
+    ; Palettes
+    ldx #0
+:
+    lda PaletteData, x
+    sta $2007
+    inx
+    cpx #(8*4)
+    bne :-
 
     jsr LoadNametables
 
     lda #1
     sta Draw
+
+    lda #%1000_0000
+    sta $2000
+
+    jsr WaitForNMI
 
 Frame:
     jsr ReadControllers
@@ -123,6 +159,16 @@ Frame:
     eor #$01
     sta Draw
 :
+
+    ; swap BG pattern table on SpriteZero hit
+:   bit $2002
+    bvs :-
+:   bit $2002
+    bvc :-
+
+    lda #%1001_0000
+    ora Scroll
+    sta $2000
 
     jsr WaitForNMI
     jmp Frame
@@ -146,7 +192,7 @@ NMI:
 
     lda Scroll
     and #$01
-    ora #%0001_0000
+    ora #%1000_0000
     sta $2000
 
     lda #0
@@ -166,6 +212,175 @@ NMI:
     rti
 
 LoadNametables:
+    bit $2002
+
+    lda #$20
+    sta $2006
+    lda #$00
+    sta $2006
+
+    lda #TextBGTile
+    ldy #8
+:
+    sta $2007
+    sta $2007
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    sta $2007
+    sta $2007
+
+    ; Text first
+    ;lda #$20
+    ;sta $2006
+    ;lda #$22
+    ;sta $2006
+
+    ldx #0
+:
+    stx $2007
+    inx
+    cpx #16
+    bne :-
+
+    ldy #4
+:
+    sta $2007
+    sta $2007
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ;lda #$20
+    ;sta $2006
+    ;lda #$42
+    ;sta $2006
+:
+    stx $2007
+    inx
+    cpx #32
+    bne :-
+
+    ldy #7
+:
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ; First screen
+    lda PoohData+0
+    sta Counter+0
+    lda PoohData+1
+    sta Counter+1
+
+    lda #.lobyte(PoohData)
+    sta AddressPointer+0
+    lda #.hibyte(PoohData)
+    sta AddressPointer+1
+
+    clc
+    lda AddressPointer+0
+    adc #2
+    sta AddressPointer+0
+    lda #0
+    adc AddressPointer+1
+    sta AddressPointer+1
+
+    lda #26
+    sta TmpY
+
+@screen:
+    ldy #0
+    sty $2007
+    sty $2007
+
+    ldx #28
+@row:
+    lda (AddressPointer), y
+    sta $2007
+    iny
+    dex
+    bne @row
+
+    stx $2007
+    stx $2007
+
+    clc
+    lda #28
+    adc AddressPointer+0
+    sta AddressPointer+0
+    lda #0
+    adc AddressPointer+1
+    sta AddressPointer+1
+
+    dec TmpY
+    bne @screen
+
+    lda #0
+    ldy #8
+:
+    sta $2007
+    sta $2007
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+;    ldy #0
+;@loop:
+;    lda (AddressPointer), y
+;    sta $2007
+;
+;    lda Counter+0
+;    sec
+;    sbc #1
+;    sta Counter+0
+;    bcs :+
+;    dec Counter+1
+;:
+;
+;    lda Counter+0
+;    bne :+
+;    lda Counter+1
+;    bne :+
+;    jmp @poohDone
+;:
+;    clc
+;    lda AddressPointer+0
+;    adc #1
+;    sta AddressPointer+0
+;    lda #0
+;    adc AddressPointer+1
+;    sta AddressPointer+1
+;    jmp @loop
+;@poohDone:
+
+    lda #$23
+    sta $2006
+    lda #$C0
+    sta $2006
+
+    ; Top attr row
+    lda #%0000_0000
+    ldy #4
+:
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ldy #28
+    lda #%0101_0101
+:
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
     rts
 
 ButtonPressed:
@@ -222,10 +437,17 @@ ReadControllers:
     rts
 
 WaitForNMI:
+;    lda #%1000_0000
+;    ora Scroll
+;    sta $2000
+
 :   bit Sleeping
     bpl :-
     lda #0
     sta Sleeping
+    rts
+
+WaitForSpriteZero:
     rts
 
 MMC1_Init:
@@ -293,3 +515,22 @@ MMC1_Select_Page:
     lsr a
     sta $E000
     rts
+
+PaletteData:
+    ;BG
+    .byte $01, $0F, $27, $20
+    .byte $01, $0F, $27, $16
+    .byte $01, $20, $0F, $0F
+    .byte $01, $0F, $0F, $0F
+
+    ;Sprites
+    .byte $01, $0F, $20, $0F
+    .byte $01, $0F, $0F, $0F
+    .byte $01, $0F, $0F, $0F
+    .byte $01, $0F, $0F, $0F
+
+PoohData:
+    .include "pooh.i"
+
+PoohTuxData:
+    .include "pooh_tux.i"
