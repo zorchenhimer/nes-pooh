@@ -55,7 +55,6 @@ Controller_Old: .res 1
 
 TmpY: .res 1
 
-Counter: .res 2
 AddressPointer: .res 2
 
 .segment "OAM"
@@ -148,13 +147,13 @@ RESET:
 Frame:
     jsr ReadControllers
 
-    lda BUTTON_A
+    lda #BUTTON_A
     jsr ButtonPressed
     beq :+
     inc Scroll
 :
 
-    lda BUTTON_START
+    lda #BUTTON_START
     jsr ButtonPressed
     beq :+
     lda Draw
@@ -168,10 +167,18 @@ Frame:
 :   bit $2002
     bvc :-
 
-    lda #%1001_0000
-    ora Scroll
+    lda Scroll
+    and #$01
+    tax
+    ora #%1001_0000
     sta $2000
-
+    cpx #1
+    bne :+
+    jsr MMC1_CHR2
+    jmp :++
+:
+    jsr MMC1_CHR1
+:
     jsr WaitForNMI
     jmp Frame
 
@@ -274,11 +281,6 @@ LoadNametables:
     bne :-
 
     ; First screen
-    lda PoohData+0
-    sta Counter+0
-    lda PoohData+1
-    sta Counter+1
-
     lda #.lobyte(PoohData)
     sta AddressPointer+0
     lda #.hibyte(PoohData)
@@ -292,9 +294,125 @@ LoadNametables:
     adc AddressPointer+1
     sta AddressPointer+1
 
+    jsr DrawScreen
+
+    ; Attrs for first nametable
+    lda #$23
+    sta $2006
+    lda #$C0
+    sta $2006
+
+    ; Top attr row
+    lda #%0000_0000
+    ldy #4
+:
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ldy #28
+    lda #%0101_0101
+:
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ; Second Screen
+    lda #$24
+    sta $2006
+    lda #$00
+    sta $2006
+
+    lda #TextBGTile
+    ldy #8
+:
+    sta $2007
+    sta $2007
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    sta $2007
+    sta $2007
+
+    ; Text first
+    ;lda #$20
+    ;sta $2006
+    ;lda #$22
+    ;sta $2006
+
+    ldx #32
+:
+    stx $2007
+    inx
+    cpx #48
+    bne :-
+
+    ldy #4
+:
+    sta $2007
+    sta $2007
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ;lda #$20
+    ;sta $2006
+    ;lda #$42
+    ;sta $2006
+:
+    stx $2007
+    inx
+    cpx #64
+    bne :-
+
+    ldy #7
+:
+    sta $2007
+    sta $2007
+    dey
+    bne :-
+
+    ; Second screen
+    lda #.lobyte(PoohTuxData)
+    sta AddressPointer+0
+    lda #.hibyte(PoohTuxData)
+    sta AddressPointer+1
+
+    clc
+    lda AddressPointer+0
+    adc #2
+    sta AddressPointer+0
+    lda #0
+    adc AddressPointer+1
+    sta AddressPointer+1
+    jsr DrawScreen
+
+    ; Second screen attributes are uniform
+    lda #$27
+    sta $2006
+    lda #$C0
+    sta $2006
+
+    ldx #16
+    lda #$00
+:
+    sta $2007
+    sta $2007
+    sta $2007
+    sta $2007
+    dex
+    bne :-
+    rts
+
+; Expects pooh data at address in AddressPointer
+DrawScreen:
     lda #26
     sta TmpY
-
 @screen:
     ldy #0
     sty $2007
@@ -331,58 +449,6 @@ LoadNametables:
     sta $2007
     dey
     bne :-
-
-;    ldy #0
-;@loop:
-;    lda (AddressPointer), y
-;    sta $2007
-;
-;    lda Counter+0
-;    sec
-;    sbc #1
-;    sta Counter+0
-;    bcs :+
-;    dec Counter+1
-;:
-;
-;    lda Counter+0
-;    bne :+
-;    lda Counter+1
-;    bne :+
-;    jmp @poohDone
-;:
-;    clc
-;    lda AddressPointer+0
-;    adc #1
-;    sta AddressPointer+0
-;    lda #0
-;    adc AddressPointer+1
-;    sta AddressPointer+1
-;    jmp @loop
-;@poohDone:
-
-    lda #$23
-    sta $2006
-    lda #$C0
-    sta $2006
-
-    ; Top attr row
-    lda #%0000_0000
-    ldy #4
-:
-    sta $2007
-    sta $2007
-    dey
-    bne :-
-
-    ldy #28
-    lda #%0101_0101
-:
-    sta $2007
-    sta $2007
-    dey
-    bne :-
-
     rts
 
 ButtonPressed:
