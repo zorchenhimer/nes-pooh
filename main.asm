@@ -38,6 +38,7 @@ BgTile = 0
 ShineStart = 1
 :   .incbin "shine.chr"
 Text1Start = ((* - :-) / 16) + ShineStart
+ShineCount = Text1Start - ShineStart
 :   .incbin "text1.chr"
 Text2Start = ((* - :-) / 16) + Text1Start
 :   .incbin "text2.chr"
@@ -47,6 +48,8 @@ Text4Start = ((* - :-) / 16) + Text3Start
 :   .incbin "text4.chr"
 ;BgTile = ((* - :-) / 16) + Text4Start
 
+.out .sprintf("ShineStart: $%02X", ShineStart)
+.out .sprintf("ShineCount: %d", ShineCount)
 .out .sprintf("Text1Start: $%02X", Text1Start)
 .out .sprintf("Text2Start: $%02X", Text2Start)
 .out .sprintf("Text3Start: $%02X", Text3Start)
@@ -75,6 +78,8 @@ TmpX: .res 1
 TmpY: .res 1
 
 AddressPointer: .res 2
+
+SpriteZeroEnabled: .res 1
 
 .segment "OAM"
 SpriteZero:   .res 4
@@ -139,12 +144,36 @@ RESET:
     lda #0
     sta SpriteZero+2
 
+    ; Setup the shine sprite Note that tiles
+    ; aren't set here.  Those are set each frame
+    ; in UpdateShine.
+    ; First Row
+    .repeat 5, i
+    lda #64+(8*i)+16
+    sta ShineSprites+(4*i)+3
+    lda #0
+    sta ShineSprites+(4*i)+2
+    lda #168
+    sta ShineSprites+(4*i)+0
+    .endrepeat
+
+    ; Second row
+    .repeat 2, i
+    lda #88+(8*i)+16
+    sta ShineSprites+(4*(i+5))+3
+    lda #0
+    sta ShineSprites+(4*(i+5))+2
+    lda #176
+    sta ShineSprites+(4*(i+5))+0
+    .endrepeat
+
+    jsr UpdateShine
+
+    ; Palettes
     lda #$3F
     sta $2006
     lda #$00
     sta $2006
-
-    ; Palettes
     ldx #0
 :
     lda PaletteData, x
@@ -170,6 +199,7 @@ Frame:
     jsr ButtonPressed
     beq :+
     inc Scroll
+    jsr UpdateShine
 :
 
     lda #BUTTON_START
@@ -180,6 +210,13 @@ Frame:
     sta Draw
 :
 
+    ; Don't wait for sprite zero if drawing is
+    ; disabled.
+    lda SpriteZeroEnabled
+    bne :+
+    jsr WaitForNMI
+    jmp Frame
+:
     ; swap BG pattern table on SpriteZero hit
 :   bit $2002
     bvs :-
@@ -218,26 +255,62 @@ NMI:
     lda #$02
     sta $4014
 
-    lda Scroll
-    and #$01
-    ora #%1000_0000
-    sta $2000
+    ; zero turns off sprites and BG
+    lda #$3F
+    sta $2006
+    lda #$00
+    sta $2006
+
+    lda Draw
+    beq :+
+    ; reset BG color
+    lda PaletteData
+    sta $2007
+    lda #1
+    sta SpriteZeroEnabled
+
+    lda #%0001_1110
+    jmp :++
+
+:   ; set black BG
+    lda #$FF
+    sta $2007
+    lda #0
+    sta SpriteZeroEnabled
+
+    lda #%0000_0110
+:
+    sta $2001
 
     lda #0
     sta $2005
     sta $2005
 
-    ; zero turns off sprites and BG
-    lda Draw
-    beq :+
-    lda #%0001_1110
-    jmp :++
+    lda Scroll
+    and #$01
+    ora #%1000_0000
+    sta $2000
 
-:   lda #%0000_0110
-:   sta $2001
 
     pla
     rti
+
+UpdateShine:
+    lda Scroll
+    and #1
+    beq :+
+    .repeat 7, i
+    lda #ShineStart+i+1
+    sta ShineSprites+(4*i)+1
+    .endrepeat
+    rts
+
+:   ; no shine
+    lda #ShineStart
+    .repeat 7, i
+    sta ShineSprites+(4*i)+1
+    .endrepeat
+    rts
 
 LoadNametables:
     bit $2002
