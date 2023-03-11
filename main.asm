@@ -23,7 +23,7 @@ BUTTON_DOWN     = 1 << 2
 BUTTON_LEFT     = 1 << 1
 BUTTON_RIGHT    = 1 << 0
 
-TextBGTile = $0E
+TextBGTile = $00
 
 .segment "VECTORS"
     .word NMI
@@ -31,9 +31,27 @@ TextBGTile = $0E
     .word IRQ
 
 .segment "CHR0"
-    .incbin "meme-text.chr"
-    .incbin "shine.chr"
+    ;.incbin "meme-text.chr"
+BgTile = 0
+    .byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
+    .byte $00, $00, $00, $00, $00, $00, $00, $00
+ShineStart = 1
+:   .incbin "shine.chr"
+Text1Start = ((* - :-) / 16) + ShineStart
+:   .incbin "text1.chr"
+Text2Start = ((* - :-) / 16) + Text1Start
+:   .incbin "text2.chr"
+Text3Start = ((* - :-) / 16) + Text2Start
+:   .incbin "text3.chr"
+Text4Start = ((* - :-) / 16) + Text3Start
+:   .incbin "text4.chr"
+;BgTile = ((* - :-) / 16) + Text4Start
 
+.out .sprintf("Text1Start: $%02X", Text1Start)
+.out .sprintf("Text2Start: $%02X", Text2Start)
+.out .sprintf("Text3Start: $%02X", Text3Start)
+.out .sprintf("Text4Start: $%02X", Text4Start)
+.out .sprintf("BgTile: $%02X", BgTile)
 .segment "CHR1"
     .incbin "pooh.chr"
 
@@ -53,6 +71,7 @@ IgnoreInput: .res 1
 Controller: .res 1
 Controller_Old: .res 1
 
+TmpX: .res 1
 TmpY: .res 1
 
 AddressPointer: .res 2
@@ -115,7 +134,7 @@ RESET:
     lda #22
     sta SpriteZero+0
 
-    lda #$0F
+    lda #BgTile
     sta SpriteZero+1
     lda #0
     sta SpriteZero+2
@@ -228,8 +247,10 @@ LoadNametables:
     lda #$00
     sta $2006
 
-    lda #TextBGTile
-    ldy #8
+    ; Draw blank tiles that we'll draw
+    ; the text on top of
+    lda #BgTile
+    ldy #24
 :
     sta $2007
     sta $2007
@@ -237,48 +258,31 @@ LoadNametables:
     sta $2007
     dey
     bne :-
-
-    sta $2007
-    sta $2007
 
     ; Text first
-    ;lda #$20
-    ;sta $2006
-    ;lda #$22
-    ;sta $2006
+    lda #$20
+    sta $2006
+    lda #$22
+    sta $2006
+    lda #Text1Start
+    sta TmpX
+    lda #.lobyte(Text1Data)
+    sta AddressPointer+0
+    lda #.hibyte(Text1Data)
+    sta AddressPointer+1
+    jsr DrawText
 
-    ldx #0
-:
-    stx $2007
-    inx
-    cpx #16
-    bne :-
-
-    ldy #4
-:
-    sta $2007
-    sta $2007
-    sta $2007
-    sta $2007
-    dey
-    bne :-
-
-    ;lda #$20
-    ;sta $2006
-    ;lda #$42
-    ;sta $2006
-:
-    stx $2007
-    inx
-    cpx #32
-    bne :-
-
-    ldy #7
-:
-    sta $2007
-    sta $2007
-    dey
-    bne :-
+    lda #$20
+    sta $2006
+    lda #$42
+    sta $2006
+    lda #Text2Start
+    sta TmpX
+    lda #.lobyte(Text2Data)
+    sta AddressPointer+0
+    lda #.hibyte(Text2Data)
+    sta AddressPointer+1
+    jsr DrawText
 
     ; First screen
     lda #.lobyte(PoohData)
@@ -294,6 +298,10 @@ LoadNametables:
     adc AddressPointer+1
     sta AddressPointer+1
 
+    lda #$20
+    sta $2006
+    lda #$60
+    sta $2006
     jsr DrawScreen
 
     ; Attrs for first nametable
@@ -325,8 +333,8 @@ LoadNametables:
     lda #$00
     sta $2006
 
-    lda #TextBGTile
-    ldy #8
+    lda #BgTile
+    ldy #24
 :
     sta $2007
     sta $2007
@@ -335,47 +343,34 @@ LoadNametables:
     dey
     bne :-
 
-    sta $2007
-    sta $2007
+    lda #$24
+    sta $2006
+    lda #$22
+    sta $2006
+    lda #Text3Start
+    sta TmpX
+    lda #.lobyte(Text3Data)
+    sta AddressPointer+0
+    lda #.hibyte(Text3Data)
+    sta AddressPointer+1
+    jsr DrawText
 
-    ; Text first
-    ;lda #$20
-    ;sta $2006
-    ;lda #$22
-    ;sta $2006
+    lda #$24
+    sta $2006
+    lda #$42
+    sta $2006
+    lda #Text4Start
+    sta TmpX
+    lda #.lobyte(Text4Data)
+    sta AddressPointer+0
+    lda #.hibyte(Text4Data)
+    sta AddressPointer+1
+    jsr DrawText
 
-    ldx #32
-:
-    stx $2007
-    inx
-    cpx #48
-    bne :-
-
-    ldy #4
-:
-    sta $2007
-    sta $2007
-    sta $2007
-    sta $2007
-    dey
-    bne :-
-
-    ;lda #$20
-    ;sta $2006
-    ;lda #$42
-    ;sta $2006
-:
-    stx $2007
-    inx
-    cpx #64
-    bne :-
-
-    ldy #7
-:
-    sta $2007
-    sta $2007
-    dey
-    bne :-
+    lda #$24
+    sta $2006
+    lda #$60
+    sta $2006
 
     ; Second screen
     lda #.lobyte(PoohTuxData)
@@ -409,6 +404,22 @@ LoadNametables:
     bne :-
     rts
 
+; Expects PPU address already set & data pointer in AddressPointer
+DrawText:
+    ldy #0
+    lda (AddressPointer), y
+    tax
+
+    clc
+:   iny
+    lda (AddressPointer), y
+    adc TmpX    ; Tile start offset
+    sta $2007
+    dex
+    bne :-
+
+    rts
+
 ; Expects pooh data at address in AddressPointer
 DrawScreen:
     lda #26
@@ -418,6 +429,7 @@ DrawScreen:
     sty $2007
     sty $2007
 
+    ;ldy #0
     ldx #28
 @row:
     lda (AddressPointer), y
@@ -426,6 +438,7 @@ DrawScreen:
     dex
     bne @row
 
+    ldx #0
     stx $2007
     stx $2007
 
@@ -597,8 +610,10 @@ PaletteData:
     .byte $01, $0F, $0F, $0F
     .byte $01, $0F, $0F, $0F
 
-PoohData:
-    .include "pooh.i"
+PoohData:    .include "pooh.i"
+PoohTuxData: .include "pooh_tux.i"
 
-PoohTuxData:
-    .include "pooh_tux.i"
+Text1Data: .include "text1.i"
+Text2Data: .include "text2.i"
+Text3Data: .include "text3.i"
+Text4Data: .include "text4.i"
