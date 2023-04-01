@@ -13,8 +13,8 @@ LD = ld65
 CAFLAGS = -g -t nes  -l bin/$(NAME).lst
 LDFLAGS = -C $(NESCFG) -m bin/$(NAME).nes.map -vm --dbgfile bin/$(NAME).dbg
 
-CHRUTIL = ../go-nes/bin/chrutil
-TXT2CHR = ../go-nes/bin/text2chr
+CHRUTIL = go-nes/bin/chrutil
+TXT2CHR = go-nes/bin/text2chr
 
 # Mapper configuration for linker
 NESCFG = nes_mmc1.cfg
@@ -35,7 +35,7 @@ SOURCES = main.asm nes2header.inc \
 .PHONY: clean default chr cleanall
 
 default: all
-all: bin/$(NAME).nes
+all: $(CHRUTIL) $(TXT2CHR) bin/$(NAME).nes
 
 clean:
 	-rm bin/* *.chr *.i
@@ -89,3 +89,6 @@ bin/$(NAME).o: $(SOURCES) $(CHR) bin/
 
 bin/$(NAME).nes: bin/$(NAME).o $(NESCFG)
 	$(LD) $(LDFLAGS) -o $@ $<
+
+go-nes/bin/%:
+	$(MAKE) -C go-nes/ bin/$(notdir $@)
